@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+  Se usa parado, en una mesa, con una mano ocupada sosteniendo cartas.
+  De ahí salen casi todas las decisiones visuales: fondo de paño oscuro para
+  que la pantalla no encandile de noche, números grandes que se leen desde el
+  otro lado de la mesa, y objetivos táctiles que no se erran.
+*/
+
+@theme {
+  /* El paño */
+  --color-pano-900: #0a231a;
+  --color-pano-800: #0f3227;
+  --color-pano-700: #164434;
+  --color-pano-600: #1d5943;
+
+  /* La tiza y el papel */
+  --color-tiza: #eef4ef;
+  --color-tiza-suave: #b9cdc0;
+  --color-tiza-tenue: #7d998a;
+  --color-papel: #f7faf7;
+
+  /* Los bandos */
+  --color-bando-verde: #35c88a;
+  --color-bando-bordo: #f2607a;
+  --color-bando-ocre: #f0b03c;
+
+  --color-alerta: #ffb454;
+  --color-error: #ff8a8a;
+
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Mono", monospace;
+
+  --radius-caja: 14px;
+}
+
+html,
+body {
+  background: var(--color-pano-900);
+  color: var(--color-tiza);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Nada de resaltado azul al tocar: se anota a toques y se nota mucho. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer utilities {
+  .cifra {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+
+  .tarjeta {
+    background: var(--color-pano-800);
+    border: 1px solid color-mix(in srgb, var(--color-tiza) 12%, transparent);
+    border-radius: var(--radius-caja);
+  }
+
+  .boton-pano {
+    background: var(--color-pano-700);
+    border: 1px solid color-mix(in srgb, var(--color-tiza) 14%, transparent);
+    border-radius: var(--radius-caja);
+    transition: transform 0.06s ease, background 0.12s ease;
+  }
+  .boton-pano:active {
+    transform: scale(0.97);
+    background: var(--color-pano-600);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-bando-verde);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -7,6 +7,13 @@ const PUBLICAS = ['/sala', '/entrar', '/auth']
 export async function proxy(request: NextRequest) {
   let respuesta = NextResponse.next({ request })
 
+  // Sin configuración de Supabase no hay sesión que refrescar. Se deja pasar en
+  // vez de reventar acá: el error se ve en la pantalla que lo necesita y no en
+  // un 500 de toda la app.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return respuesta
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

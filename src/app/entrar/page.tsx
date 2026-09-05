@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LogoGoogle } from '@/componentes/BotonGoogle'
 import { Marca } from '@/componentes/Marca'
 import { traducirErrorAuth } from '@/lib/errores'
@@ -25,6 +25,16 @@ export default function Entrar() {
   const [yendoAGoogle, setYendoAGoogle] = useState(false)
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // El callback rebota acá con el motivo cuando el acceso no se completa. Se lee
+  // después de montar y no con `useSearchParams` para no perder el
+  // prerenderizado, ni con un estado inicial perezoso porque el servidor no ve
+  // la URL del navegador y el HTML quedaría distinto al hidratar.
+  useEffect(() => {
+    const motivo = new URLSearchParams(window.location.search).get('error')
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- una sola vez al montar
+    if (motivo) setError(traducirErrorAuth(motivo))
+  }, [])
 
   async function entrarConGoogle() {
     setYendoAGoogle(true)

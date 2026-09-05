@@ -34,10 +34,18 @@ interface FilaPartida {
   bandos: FilaBando[] | null
 }
 
+/*
+  ⚠️ `bandos` va con el nombre de su clave foránea, no a secas.
+
+  Hay DOS relaciones entre partidas y bandos: los bandos apuntan a su partida, y
+  la partida apunta a su bando ganador. Con `bandos` a secas PostgREST no sabe
+  cuál anidar y responde PGRST201 sin traer nada — la partida se crea bien y
+  después no se puede abrir.
+*/
 const SELECT_PARTIDA = `
   id, grupo_id, juego, modalidad, config, estado, totales, codigo_sala,
   ganador_bando, iniciada_en, terminada_en,
-  bandos ( id, posicion, etiqueta, color,
+  bandos!bandos_partida_id_fkey ( id, posicion, etiqueta, color,
     bando_jugadores ( jugadores ( id, nombre, avatar_url ) ) )
 `
 

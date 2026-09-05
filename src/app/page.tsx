@@ -8,6 +8,7 @@ import { colorDe } from '@/componentes/colores'
 import { motorDe } from '@/core/motores'
 import type { Bando, Partida } from '@/core/tipos'
 import { listarPartidas } from '@/lib/datos'
+import { mensajeDeError } from '@/lib/errores'
 
 export default function Home() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null)
@@ -16,7 +17,7 @@ export default function Home() {
   useEffect(() => {
     listarPartidas()
       .then(setPartidas)
-      .catch((e) => setError(e instanceof Error ? e.message : 'No pudimos traer las partidas.'))
+      .catch((e) => setError(mensajeDeError(e, 'No pudimos traer las partidas.')))
   }, [])
 
   const enCurso = partidas?.filter((p) => p.estado === 'en_curso') ?? []

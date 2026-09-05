@@ -31,3 +31,27 @@ export function traducirErrorAuth(mensaje: string): string {
 
   return mensaje
 }
+
+/**
+ * Saca un mensaje legible de cualquier cosa que se haya tirado.
+ *
+ * ⚠️ Los errores de PostgREST **no son `Error`**: son objetos planos con
+ * `message`, `code` y `hint`. Un `e instanceof Error ? e.message : 'falló algo'`
+ * los tapa a todos con el texto genérico, y ahí se pierde justamente el dato que
+ * dice qué pasó. Costó un rato con un PGRST201 que sólo se veía como
+ * "No pudimos cargar la partida".
+ */
+export function mensajeDeError(e: unknown, porDefecto = 'Algo salió mal.'): string {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'string') return e
+
+  if (e && typeof e === 'object') {
+    const posible = e as { message?: unknown; hint?: unknown; code?: unknown }
+    if (typeof posible.message === 'string' && posible.message) {
+      const codigo = typeof posible.code === 'string' ? ` (${posible.code})` : ''
+      return posible.message + codigo
+    }
+  }
+
+  return porDefecto
+}

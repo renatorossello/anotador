@@ -5,6 +5,7 @@ import { motorDe } from '@/core/motores'
 import { sumar, vivos } from '@/core/puntajes'
 import type { Asiento, Partida, Resultado } from '@/core/tipos'
 import { cargarPartida } from '@/lib/datos'
+import { mensajeDeError } from '@/lib/errores'
 import { encolar, guardarAsiento, guardarPartida, leerPartida, ordenar } from '@/lib/local/db'
 import { drenar } from '@/lib/local/sync'
 
@@ -44,7 +45,7 @@ export function usePartida(id: string) {
         setAsientos((previos) => fusionar(previos, remotos))
         setError(null)
       } catch (e) {
-        if (vigente && !local) setError(mensaje(e))
+        if (vigente && !local) setError(mensajeDeError(e, 'No pudimos cargar la partida.'))
       } finally {
         if (vigente) setCargando(false)
       }
@@ -142,8 +143,4 @@ function fusionar(locales: Asiento[], remotos: Asiento[]): Asiento[] {
   const porId = new Map(remotos.map((a) => [a.id, a]))
   for (const local of locales) porId.set(local.id, local)
   return ordenar([...porId.values()])
-}
-
-function mensaje(e: unknown) {
-  return e instanceof Error ? e.message : 'No pudimos cargar la partida.'
 }

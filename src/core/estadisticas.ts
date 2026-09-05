@@ -244,3 +244,34 @@ export function juegosJugados(partidas: Partida[]): ClaveJuego[] {
   for (const p of terminadas(partidas)) claves.add(p.juego)
   return [...claves]
 }
+
+/** Las partidas de una identidad, de la más reciente a la más vieja. */
+export function partidasDe(partidas: Partida[], identidad: string, filtro: Filtro = {}): Partida[] {
+  return terminadas(partidas, filtro)
+    .filter((p) => bandoDe(p, identidad))
+    .reverse()
+}
+
+/** La fila del ranking correspondiente a una identidad, o null si no jugó. */
+export function resumenDe(partidas: Partida[], identidad: string, filtro: Filtro = {}): FilaRanking | null {
+  return ranking(partidas, filtro).find((f) => f.identidad === identidad) ?? null
+}
+
+/** Cómo le fue en una partida puntual: sirve para pintar el historial. */
+export function comoLeFue(partida: Partida, identidad: string): { gano: boolean; propio: number; rival: number } | null {
+  const mio = bandoDe(partida, identidad)
+  if (!mio) return null
+
+  const propio = partida.totales[mio.id] ?? 0
+  const otros = partida.bandos.filter((b) => b.id !== mio.id).map((b) => partida.totales[b.id] ?? 0)
+  return {
+    gano: partida.ganadorBandoId === mio.id,
+    propio,
+    rival: otros.length ? Math.max(...otros) : 0,
+  }
+}
+
+/** Con quién jugó de compañero, para la ficha. */
+export function parejasDe(partidas: Partida[], identidad: string, filtro: Filtro = {}): FilaDupla[] {
+  return duplas(partidas, filtro).filter((d) => d.identidades.includes(identidad))
+}

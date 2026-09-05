@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { duplas, identidadDe, juegosJugados, manoAMano, ranking, terminadas } from './estadisticas'
+import {
+  comoLeFue,
+  duplas,
+  identidadDe,
+  juegosJugados,
+  manoAMano,
+  parejasDe,
+  partidasDe,
+  ranking,
+  resumenDe,
+  terminadas,
+} from './estadisticas'
 import type { ClaveJuego, Jugador, Partida } from './tipos'
 
 /*
@@ -250,5 +261,41 @@ describe('duplas', () => {
 
   it('ignora los bandos de un solo jugador', () => {
     expect(duplas([partida({ bandos: [[rena], [magui]], totales: [3000, 100] })])).toHaveLength(0)
+  })
+})
+
+describe('ficha de un jugador', () => {
+  const historial = [
+    partida({ bandos: [[rena], [magui]], totales: [3000, 1000], ganador: 0, dia: 1 }),
+    partida({ bandos: [[renato], [magui]], totales: [500, 3000], ganador: 1, dia: 2 }),
+    partida({ bandos: [[magui], [invitado]], totales: [3000, 10], ganador: 0, dia: 3 }),
+  ]
+
+  it('trae sólo las partidas donde jugó, de la más nueva a la más vieja', () => {
+    const suyas = partidasDe(historial, 'u-renato')
+    expect(suyas).toHaveLength(2)
+    expect(suyas[0].terminadaEn! > suyas[1].terminadaEn!).toBe(true)
+  })
+
+  it('resume su rendimiento', () => {
+    expect(resumenDe(historial, 'u-renato')).toMatchObject({ jugadas: 2, ganadas: 1 })
+    expect(resumenDe(historial, 'nadie')).toBeNull()
+  })
+
+  it('dice cómo le fue en cada partida, contra el mejor rival', () => {
+    const [ultima] = partidasDe(historial, 'u-renato')
+    expect(comoLeFue(ultima, 'u-renato')).toEqual({ gano: false, propio: 500, rival: 3000 })
+    expect(comoLeFue(ultima, 'nadie')).toBeNull()
+  })
+
+  it('lista sólo las parejas donde estuvo', () => {
+    const rivales = [invitado, jugador('j-cuarto', 'Cuarto')]
+    const conParejas = [
+      partida({ bandos: [[rena, magui], rivales], totales: [3000, 100], ganador: 0, modalidad: '2 vs 2', dia: 1 }),
+      partida({ bandos: [rivales, [magui, invitado]], totales: [3000, 100], ganador: 0, modalidad: '2 vs 2', dia: 2 }),
+    ]
+    const suyas = parejasDe(conParejas, 'u-renato')
+    expect(suyas).toHaveLength(1)
+    expect(suyas[0].identidades).toContain('u-magui')
   })
 })

@@ -98,7 +98,11 @@ export default function Stats() {
                 <tbody>
                   {filas.map((fila) => (
                     <tr key={fila.identidad} className="border-t border-white/8">
-                      <td className="px-4 py-3">{fila.nombre}</td>
+                      <td className="px-4 py-3">
+                        <Link href={`/jugador/${fila.identidad}`} className="underline-offset-4 hover:underline">
+                          {fila.nombre}
+                        </Link>
+                      </td>
                       <td className="cifra px-2 py-3 text-right">{fila.jugadas}</td>
                       <td className="cifra px-2 py-3 text-right font-semibold">{fila.ganadas}</td>
                       {/* El porcentaje va siempre con las jugadas al lado: sobre dos

@@ -106,12 +106,55 @@ tabla, que es lo mismo que se evitó arriba.
 hay otro. Sirve para ordenar el rayado; para auditar está `recibido_en`, que lo
 pone el servidor.
 
+## Estadísticas
+
+El cálculo vive en `core/estadisticas.ts`, **puro**: sin Supabase ni React. Se
+prueba con `pnpm test` (vitest) contra partidas armadas a mano — es código donde
+un error no se ve mirando la pantalla, porque un promedio mal calculado parece
+perfectamente normal.
+
+⚠️ **La unidad es la PERSONA, no el perfil**: `claimed_by ?? jugador.id`. Cada
+uno arma su grupo, así que hay perfiles de la misma persona en grupos distintos;
+contándolos por separado, el historial queda partido y ningún número es cierto.
+Como efecto lateral, para los perfiles vinculados fusionar deja de ser necesario.
+
+Tres reglas que ya costaron pensarse y no conviene «simplificar»:
+
+- **La diferencia se mide contra el mejor rival**, no contra la suma: en 1v1v1,
+  restar los puntos de los dos rivales da un número sin sentido.
+- **El porcentaje va siempre con las jugadas al lado**, y los rankings de parejas
+  piden un mínimo. Un 100 % sobre dos partidas es ruido con forma de dato.
+- **Truco y Burako nunca en la misma tabla**: 30 y 3000 no son comparables, ni
+  entre juegos ni entre objetivos distintos del mismo juego.
+
+⚠️ Todo esto depende de que las partidas se **cierren**, y por eso el cierre es
+automático (ver `usePartida`): el estado sigue al resultado del motor en los dos
+sentidos, así que deshacer reabre.
+
+## Fotos de perfil
+
+Bucket `avatares` **público**, con nombres de archivo aleatorios: privado
+obligaría a URLs firmadas que vencen y rompen la caché en las listas, que es
+donde estas imágenes se muestran de a muchas. Lo que protege la foto es que su
+URL no se puede adivinar. Escribir está cerrado: la ruta es
+`<jugador_id>/<aleatorio>.webp` y la policy comprueba que ese jugador sea de un
+grupo del que sube.
+
+⚠️ **La foto se achica en el cliente antes de subirla** (`lib/imagenes.ts`). No
+es opcional: una foto de teléfono pesa 3-5 MB y el avatar se ve a 40 px. Sin eso,
+subir tarda muchísimo con datos móviles y la imagen entera viaja en cada carga de
+la lista.
+
+Sin foto se muestran las iniciales sobre un color derivado del nombre, así la
+lista se lee igual sin obligar a nadie a cargar nada.
+
 ## Pendientes
 
 - La sala en vivo (`/sala/[code]`): el SQL ya está, falta la pantalla.
-- Estadísticas e historial por jugador.
-- Reclamar un perfil desde una cuenta.
 - PWA instalable.
+- Un grupo compartido entre varias personas: hoy cada uno tiene el suyo y los
+  perfiles de la misma gente se duplican. ⚠️ Habilitar dos anotadores rompe el
+  supuesto de un escritor por partida.
 
 ## Publicación
 

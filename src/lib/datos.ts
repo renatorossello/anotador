@@ -245,3 +245,26 @@ export async function abandonarPartida(id: string) {
   const { error } = await supabase.from('partidas').update({ estado: 'abandonada' }).eq('id', id)
   if (error) throw error
 }
+
+/**
+ * Marca a los dos como la misma persona: las participaciones del origen pasan
+ * al destino y el origen queda archivado.
+ *
+ * No es cosmético. Un duplicado deja las partidas viejas atadas al perfil sin
+ * vincular, y ese historial no le aparece a nadie.
+ */
+export async function fusionarJugadores(origenId: string, destinoId: string) {
+  const supabase = supabaseNavegador()
+  const { error } = await supabase.rpc('fusionar_jugadores', {
+    p_origen: origenId,
+    p_destino: destinoId,
+  })
+  if (error) throw error
+}
+
+/** Lo saca de las listas sin tocar las partidas donde ya jugó. */
+export async function archivarJugador(id: string) {
+  const supabase = supabaseNavegador()
+  const { error } = await supabase.from('jugadores').update({ archivado: true }).eq('id', id)
+  if (error) throw error
+}

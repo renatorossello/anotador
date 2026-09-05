@@ -242,9 +242,21 @@ function SelectorJugador({
               key={jugador.id}
               type="button"
               onClick={() => onElegir(jugador.id)}
-              className="boton-pano px-4 py-3 text-left text-lg"
+              className="boton-pano flex items-center gap-3 px-4 py-3 text-left"
             >
-              {jugador.nombre}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-lg">{jugador.nombre}</span>
+                {/* Dos jugadores pueden llamarse igual: sin el mail a la vista, la
+                    lista muestra dos filas idénticas y no hay forma de elegir. */}
+                <span className="block truncate text-xs text-[color:var(--color-tiza-tenue)]">
+                  {jugador.email ?? 'sin mail'}
+                </span>
+              </span>
+              {jugador.vinculado && (
+                <span className="shrink-0 rounded-full bg-[color:var(--color-bando-verde)]/15 px-2 py-0.5 text-xs text-[color:var(--color-bando-verde)]">
+                  vinculado
+                </span>
+              )}
             </button>
           ))}
         </div>

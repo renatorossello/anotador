@@ -25,6 +25,8 @@ export interface Filtro {
 export interface FilaRanking {
   identidad: string
   nombre: string
+  /** La foto del perfil con el que más se la anotó, si alguno tiene. */
+  avatarUrl: string | null
   jugadas: number
   ganadas: number
   /** Entre 0 y 1. Mirarla sin `jugadas` al lado no significa nada. */
@@ -78,6 +80,7 @@ function diferencia(partida: Partida, bando: Bando): number {
 interface Acumulado {
   identidad: string
   nombres: Map<string, number>
+  avatares: Map<string, number>
   jugadas: number
   ganadas: number
   diferencias: number[]
@@ -97,13 +100,24 @@ function acumular(partidas: Partida[]): Map<string, Acumulado> {
         const identidad = identidadDe(jugador)
         let acc = porIdentidad.get(identidad)
         if (!acc) {
-          acc = { identidad, nombres: new Map(), jugadas: 0, ganadas: 0, diferencias: [], resultados: [] }
+          acc = {
+            identidad,
+            nombres: new Map(),
+            avatares: new Map(),
+            jugadas: 0,
+            ganadas: 0,
+            diferencias: [],
+            resultados: [],
+          }
           porIdentidad.set(identidad, acc)
         }
 
         // La misma persona puede llamarse distinto en cada grupo ("Rena" y
         // "Renato"): gana el nombre con el que más se la anotó.
         acc.nombres.set(jugador.nombre, (acc.nombres.get(jugador.nombre) ?? 0) + 1)
+        if (jugador.avatarUrl) {
+          acc.avatares.set(jugador.avatarUrl, (acc.avatares.get(jugador.avatarUrl) ?? 0) + 1)
+        }
         acc.jugadas++
         if (gano) acc.ganadas++
         acc.diferencias.push(dif)
@@ -148,6 +162,7 @@ export function ranking(partidas: Partida[], filtro: Filtro = {}): FilaRanking[]
     .map((acc) => ({
       identidad: acc.identidad,
       nombre: nombreMasUsado(acc.nombres),
+      avatarUrl: acc.avatares.size > 0 ? nombreMasUsado(acc.avatares) : null,
       jugadas: acc.jugadas,
       ganadas: acc.ganadas,
       efectividad: acc.jugadas === 0 ? 0 : acc.ganadas / acc.jugadas,

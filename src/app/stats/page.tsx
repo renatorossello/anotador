@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Avatar } from '@/componentes/Avatar'
 import { JUEGOS, motorDe } from '@/core/motores'
 import { duplas, juegosJugados, ranking, terminadas } from '@/core/estadisticas'
 import type { ClaveJuego, Partida } from '@/core/tipos'
@@ -99,7 +100,11 @@ export default function Stats() {
                   {filas.map((fila) => (
                     <tr key={fila.identidad} className="border-t border-white/8">
                       <td className="px-4 py-3">
-                        <Link href={`/jugador/${fila.identidad}`} className="underline-offset-4 hover:underline">
+                        <Link
+                          href={`/jugador/${fila.identidad}`}
+                          className="flex items-center gap-2.5 underline-offset-4 hover:underline"
+                        >
+                          <Avatar nombre={fila.nombre} url={fila.avatarUrl} tamaño={28} />
                           {fila.nombre}
                         </Link>
                       </td>

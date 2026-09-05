@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Avatar } from '@/componentes/Avatar'
 import { JUEGOS, motorDe } from '@/core/motores'
 import {
   comoLeFue,
@@ -52,9 +53,12 @@ export default function FichaJugador({ params }: { params: Promise<{ id: string 
   return (
     <main className="mx-auto max-w-2xl px-5 pb-16 pt-8">
       <header className="flex items-center justify-between">
-        <h1 className="truncate text-xl font-bold tracking-tight">
-          {resumen?.nombre ?? 'Jugador'}
-        </h1>
+        <div className="flex min-w-0 items-center gap-3">
+          {resumen && <Avatar nombre={resumen.nombre} url={resumen.avatarUrl} tamaño={44} />}
+          <h1 className="truncate text-xl font-bold tracking-tight">
+            {resumen?.nombre ?? 'Jugador'}
+          </h1>
+        </div>
         <Link href="/stats" className="shrink-0 text-sm text-[color:var(--color-tiza-suave)]">
           Volver
         </Link>
@@ -131,6 +135,7 @@ export default function FichaJugador({ params }: { params: Promise<{ id: string 
                     href={`/jugador/${rival.identidad}`}
                     className="tarjeta flex items-center gap-3 px-4 py-3"
                   >
+                    <Avatar nombre={rival.nombre} url={null} tamaño={32} />
                     <span className="flex-1 truncate">{rival.nombre}</span>
                     <span className="cifra text-sm">
                       <span style={{ color: 'var(--color-bando-verde)' }}>{rival.ganadas}</span>

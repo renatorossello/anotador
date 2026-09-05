@@ -269,3 +269,47 @@ export async function archivarJugador(id: string) {
   const { error } = await supabase.from('jugadores').update({ archivado: true }).eq('id', id)
   if (error) throw error
 }
+
+/**
+ * Sube la foto de un jugador y devuelve el jugador actualizado.
+ *
+ * El nombre del archivo es aleatorio y va bajo la carpeta del jugador: esa
+ * carpeta es lo que la policy del bucket usa para comprobar el permiso, y lo
+ * aleatorio es lo que hace que la URL pública no se pueda adivinar.
+ */
+export async function subirAvatar(jugadorId: string, imagen: Blob): Promise<Jugador> {
+  const supabase = supabaseNavegador()
+  const ruta = `${jugadorId}/${crypto.randomUUID()}.webp`
+
+  const { error: errorSubida } = await supabase.storage
+    .from('avatares')
+    .upload(ruta, imagen, { contentType: 'image/webp', upsert: false })
+  if (errorSubida) throw errorSubida
+
+  const { data } = supabase.storage.from('avatares').getPublicUrl(ruta)
+
+  const { data: fila, error } = await supabase
+    .from('jugadores')
+    .update({ avatar_url: data.publicUrl })
+    .eq('id', jugadorId)
+    .select(CAMPOS_JUGADOR)
+    .single()
+  if (error) throw error
+
+  return aJugador(fila as FilaJugador)
+}
+
+export async function quitarAvatar(jugadorId: string): Promise<Jugador> {
+  const supabase = supabaseNavegador()
+  const { data, error } = await supabase
+    .from('jugadores')
+    .update({ avatar_url: null })
+    .eq('id', jugadorId)
+    .select(CAMPOS_JUGADOR)
+    .single()
+  if (error) throw error
+  // El archivo queda en el bucket: borrarlo obligaría a manejar el caso de que
+  // el borrado falle después de haber limpiado la referencia, y una foto huérfana
+  // de 30 KB no le hace daño a nadie.
+  return aJugador(data as FilaJugador)
+}

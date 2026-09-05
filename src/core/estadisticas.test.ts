@@ -299,3 +299,19 @@ describe('ficha de un jugador', () => {
     expect(suyas[0].identidades).toContain('u-magui')
   })
 })
+
+describe('foto en el ranking', () => {
+  it('toma la del perfil que la tenga, aunque el otro no', () => {
+    const conFoto = { ...renato, avatarUrl: 'https://ejemplo/foto.webp' }
+    const filas = ranking([
+      partida({ bandos: [[rena], [magui]], totales: [3000, 100], ganador: 0, dia: 1 }),
+      partida({ bandos: [[conFoto], [magui]], totales: [3000, 100], ganador: 0, dia: 2 }),
+    ])
+    expect(filas.find((f) => f.identidad === 'u-renato')!.avatarUrl).toBe('https://ejemplo/foto.webp')
+  })
+
+  it('queda en null si ningún perfil tiene foto', () => {
+    const filas = ranking([partida({ bandos: [[rena], [magui]], totales: [3000, 100] })])
+    expect(filas.every((f) => f.avatarUrl === null)).toBe(true)
+  })
+})

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Avatar } from '@/componentes/Avatar'
 import { COLORES_BANDO, colorDe } from '@/componentes/colores'
 import { JUEGOS, motorDe } from '@/core/motores'
 import type { ClaveJuego, Jugador, Modalidad } from '@/core/tipos'
@@ -244,6 +245,7 @@ function SelectorJugador({
               onClick={() => onElegir(jugador.id)}
               className="boton-pano flex items-center gap-3 px-4 py-3 text-left"
             >
+              <Avatar nombre={jugador.nombre} url={jugador.avatarUrl} tamaño={36} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-lg">{jugador.nombre}</span>
                 {/* Dos jugadores pueden llamarse igual: sin el mail a la vista, la

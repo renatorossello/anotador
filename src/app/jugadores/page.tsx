@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Avatar } from '@/componentes/Avatar'
 import type { Jugador } from '@/core/tipos'
 import {
   actualizarJugador,
@@ -9,7 +10,10 @@ import {
   crearJugador,
   fusionarJugadores,
   listarJugadores,
+  quitarAvatar,
+  subirAvatar,
 } from '@/lib/datos'
+import { achicarParaAvatar } from '@/lib/imagenes'
 import { mensajeDeError } from '@/lib/errores'
 
 const campo =
@@ -127,6 +131,12 @@ export default function Jugadores() {
                 onArchivar={() =>
                   conCarga(() => archivarJugador(jugador.id), 'No pudimos archivarlo.')
                 }
+                onFoto={(imagen) =>
+                  conCarga(() => subirAvatar(jugador.id, imagen), 'No pudimos subir la foto.')
+                }
+                onQuitarFoto={() =>
+                  conCarga(() => quitarAvatar(jugador.id), 'No pudimos quitar la foto.')
+                }
                 onCancelar={() => setEditando(null)}
               />
             </li>
@@ -137,6 +147,7 @@ export default function Jugadores() {
                 onClick={() => setEditando(jugador.id)}
                 className="tarjeta flex w-full items-center gap-3 px-4 py-3 text-left"
               >
+                <Avatar nombre={jugador.nombre} url={jugador.avatarUrl} tamaño={40} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{jugador.nombre}</span>
                   <span className="block truncate text-xs text-[color:var(--color-tiza-tenue)]">
@@ -167,6 +178,8 @@ function Edicion({
   onGuardar,
   onFusionar,
   onArchivar,
+  onFoto,
+  onQuitarFoto,
   onCancelar,
 }: {
   jugador: Jugador
@@ -175,6 +188,8 @@ function Edicion({
   onGuardar: (cambios: { nombre: string; email: string | null }) => void
   onFusionar: (destinoId: string) => void
   onArchivar: () => void
+  onFoto: (imagen: Blob) => void
+  onQuitarFoto: () => void
   onCancelar: () => void
 }) {
   const [nombre, setNombre] = useState(jugador.nombre)
@@ -185,6 +200,34 @@ function Edicion({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-4">
+        <Avatar nombre={jugador.nombre} url={jugador.avatarUrl} tamaño={64} />
+        <div className="flex flex-col items-start gap-1">
+          <label className="cursor-pointer text-sm text-[color:var(--color-tiza-suave)] underline underline-offset-4">
+            {jugador.avatarUrl ? 'Cambiar foto' : 'Poner una foto'}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const archivo = e.target.files?.[0]
+                e.target.value = ''
+                if (archivo) onFoto(await achicarParaAvatar(archivo))
+              }}
+            />
+          </label>
+          {jugador.avatarUrl && (
+            <button
+              type="button"
+              onClick={onQuitarFoto}
+              className="text-xs text-[color:var(--color-tiza-tenue)] underline underline-offset-4"
+            >
+              Quitar
+            </button>
+          )}
+        </div>
+      </div>
+
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {

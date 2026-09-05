@@ -63,7 +63,7 @@ export default function PaginaPartida({ params }: { params: Promise<{ id: string
           </p>
         )}
 
-        {resultado?.terminada && !terminada && (
+        {resultado?.terminada && !terminada && partida.puedoAnotar && (
           <div className="mt-4 rounded-[10px] border border-[color:var(--color-bando-verde)]/40 bg-[color:var(--color-bando-verde)]/10 p-4 text-center">
             <p className="text-lg font-semibold">Ganó {ganador ? nombresDe(ganador) : 'la partida'}</p>
             <button
@@ -78,9 +78,9 @@ export default function PaginaPartida({ params }: { params: Promise<{ id: string
 
         {terminada ? (
           <p className="mt-8 text-center text-sm text-[color:var(--color-tiza-tenue)]">
-            Partida terminada.
+            {ganador ? `Ganó ${nombresDe(ganador)}.` : 'Partida terminada.'}
           </p>
-        ) : (
+        ) : partida.puedoAnotar ? (
           <div className="mt-6 flex-1">
             {motor.clave === 'burako' ? (
               <AnotarBurako partida={partida} />
@@ -88,6 +88,11 @@ export default function PaginaPartida({ params }: { params: Promise<{ id: string
               <AnotarTruco partida={partida} />
             )}
           </div>
+        ) : (
+          /* Jugás esta partida pero la anota otro: se ve, no se toca. */
+          <p className="mt-8 text-center text-sm text-[color:var(--color-tiza-tenue)]">
+            Esta partida la anota otra persona. Acá la seguís.
+          </p>
         )}
 
         {!terminada && partida.puedeDeshacer && (

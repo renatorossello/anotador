@@ -9,6 +9,8 @@ interface FilaJugador {
   id: string
   nombre: string
   avatar_url: string | null
+  email?: string | null
+  claimed_by?: string | null
 }
 
 interface FilaBando {
@@ -50,7 +52,13 @@ const SELECT_PARTIDA = `
 `
 
 function aJugador(fila: FilaJugador): Jugador {
-  return { id: fila.id, nombre: fila.nombre, avatarUrl: fila.avatar_url }
+  return {
+    id: fila.id,
+    nombre: fila.nombre,
+    avatarUrl: fila.avatar_url,
+    email: fila.email ?? null,
+    vinculado: Boolean(fila.claimed_by),
+  }
 }
 
 function aBando(fila: FilaBando): Bando {
@@ -87,29 +95,83 @@ function aPartida(fila: FilaPartida): Partida {
 // Jugadores
 // ---------------------------------------------------------------------------
 
+const CAMPOS_JUGADOR = 'id, nombre, avatar_url, email, claimed_by'
+
 export async function listarJugadores(): Promise<Jugador[]> {
   const supabase = supabaseNavegador()
   const { data, error } = await supabase
     .from('jugadores')
-    .select('id, nombre, avatar_url')
+    .select(CAMPOS_JUGADOR)
     .eq('archivado', false)
     .order('nombre')
   if (error) throw error
   return (data as FilaJugador[]).map(aJugador)
 }
 
-export async function crearJugador(nombre: string): Promise<Jugador> {
+export async function crearJugador(nombre: string, email?: string | null): Promise<Jugador> {
   const supabase = supabaseNavegador()
   const { data: grupoId, error: errorGrupo } = await supabase.rpc('mi_grupo')
   if (errorGrupo) throw errorGrupo
 
   const { data, error } = await supabase
     .from('jugadores')
-    .insert({ nombre: nombre.trim(), grupo_id: grupoId })
-    .select('id, nombre, avatar_url')
+    .insert({ nombre: nombre.trim(), grupo_id: grupoId, email: normalizar(email) })
+    .select(CAMPOS_JUGADOR)
     .single()
   if (error) throw error
   return aJugador(data as FilaJugador)
+}
+
+/** El vínculo lo resuelve la base: al guardar el mail, un trigger busca la cuenta. */
+export async function actualizarJugador(
+  id: string,
+  cambios: { nombre?: string; email?: string | null },
+): Promise<Jugador> {
+  const supabase = supabaseNavegador()
+  const fila: Record<string, unknown> = {}
+  if (cambios.nombre !== undefined) fila.nombre = cambios.nombre.trim()
+  if (cambios.email !== undefined) fila.email = normalizar(cambios.email)
+
+  const { data, error } = await supabase
+    .from('jugadores')
+    .update(fila)
+    .eq('id', id)
+    .select(CAMPOS_JUGADOR)
+    .single()
+  if (error) throw error
+  return aJugador(data as FilaJugador)
+}
+
+/**
+ * El grupo propio, o null si todavía no tiene ninguno.
+ *
+ * ⚠️ No usar `mi_grupo()` para esto: esa función **crea** el grupo si falta, y
+ * acá se está preguntando, no creando. Alguien que sólo mira partidas ajenas no
+ * tiene por qué terminar con un grupo vacío a su nombre.
+ */
+const CLAVE_GRUPO = 'anotador:mi-grupo'
+
+export async function miGrupoActual(): Promise<string | null> {
+  try {
+    const supabase = supabaseNavegador()
+    const { data, error } = await supabase.rpc('mi_grupo_actual')
+    if (error) throw error
+
+    const grupo = (data as string | null) ?? null
+    if (grupo) localStorage.setItem(CLAVE_GRUPO, grupo)
+    else localStorage.removeItem(CLAVE_GRUPO)
+    return grupo
+  } catch {
+    // ⚠️ Sin red hay que responder igual: de esto depende si se puede anotar, y
+    // anotar sin señal es justamente lo que la app promete. Se usa lo último que
+    // se supo en vez de asumir que no es su partida.
+    return localStorage.getItem(CLAVE_GRUPO)
+  }
+}
+
+function normalizar(email?: string | null) {
+  const limpio = (email ?? '').trim().toLowerCase()
+  return limpio === '' ? null : limpio
 }
 
 // ---------------------------------------------------------------------------

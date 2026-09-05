@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motorDe } from '@/core/motores'
 import { sumar, vivos } from '@/core/puntajes'
 import type { Asiento, Partida, Resultado } from '@/core/tipos'
-import { cargarPartida } from '@/lib/datos'
+import { cargarPartida, miGrupoActual } from '@/lib/datos'
 import { mensajeDeError } from '@/lib/errores'
 import { encolar, guardarAsiento, guardarPartida, leerPartida, ordenar } from '@/lib/local/db'
 import { drenar } from '@/lib/local/sync'
@@ -19,6 +19,7 @@ import { drenar } from '@/lib/local/sync'
 export function usePartida(id: string) {
   const [partida, setPartida] = useState<Partida | null>(null)
   const [asientos, setAsientos] = useState<Asiento[]>([])
+  const [miGrupo, setMiGrupo] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,6 +57,10 @@ export function usePartida(id: string) {
       vigente = false
     }
   }, [id])
+
+  useEffect(() => {
+    void miGrupoActual().then(setMiGrupo)
+  }, [])
 
   const motor = useMemo(() => (partida ? motorDe(partida.juego) : null), [partida])
   const totales = useMemo(() => (partida ? sumar(asientos, partida.bandos) : {}), [asientos, partida])
@@ -133,9 +138,15 @@ export function usePartida(id: string) {
     [asientos, partida],
   )
 
-  const puedeDeshacer = vivos(asientos).length > 0
+  // Anota el dueño del grupo. El vinculado ve la partida en su historial y nada
+  // más: es lo que mantiene en pie el supuesto de un escritor por partida.
+  const puedoAnotar = Boolean(partida && miGrupo && partida.grupoId === miGrupo)
+  const puedeDeshacer = puedoAnotar && vivos(asientos).length > 0
 
-  return { partida, asientos, totales, resultado, motor, cargando, error, anotar, deshacer, cerrar, puedeDeshacer }
+  return {
+    partida, asientos, totales, resultado, motor, cargando, error,
+    anotar, deshacer, cerrar, puedeDeshacer, puedoAnotar,
+  }
 }
 
 /** Lo local manda sobre lo remoto: puede haber asientos que todavía no subieron. */

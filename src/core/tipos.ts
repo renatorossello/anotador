@@ -20,6 +20,13 @@ export interface Jugador {
   id: string
   nombre: string
   avatarUrl: string | null
+  /**
+   * Con el mail cargado, el perfil se ata solo a esa cuenta: cuando esa persona
+   * entra, ve en su historial las partidas donde jugó, aunque las haya anotado
+   * otro. El vínculo da sólo lectura.
+   */
+  email?: string | null
+  vinculado?: boolean
 }
 
 export interface Bando {

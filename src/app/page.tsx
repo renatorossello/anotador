@@ -7,14 +7,18 @@ import { Marca } from '@/componentes/Marca'
 import { colorDe } from '@/componentes/colores'
 import { motorDe } from '@/core/motores'
 import type { Bando, Partida } from '@/core/tipos'
-import { listarPartidas } from '@/lib/datos'
+import { listarPartidas, miGrupoActual } from '@/lib/datos'
 import { mensajeDeError } from '@/lib/errores'
 
 export default function Home() {
   const [partidas, setPartidas] = useState<Partida[] | null>(null)
+  const [miGrupo, setMiGrupo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // La lista trae también las partidas que jugó pero anotó otro: eso lo
+    // resuelve la RLS. Con el grupo propio se sabe cuáles puede tocar.
+    void miGrupoActual().then(setMiGrupo)
     listarPartidas()
       .then(setPartidas)
       .catch((e) => setError(mensajeDeError(e, 'No pudimos traer las partidas.')))
@@ -63,7 +67,7 @@ export default function Home() {
             </h2>
             <div className="flex flex-col gap-3">
               {enCurso.map((partida) => (
-                <TarjetaPartida key={partida.id} partida={partida} />
+                <TarjetaPartida key={partida.id} partida={partida} mia={partida.grupoId === miGrupo} />
               ))}
             </div>
           </section>
@@ -76,7 +80,7 @@ export default function Home() {
             </h2>
             <div className="flex flex-col gap-3">
               {cerradas.map((partida) => (
-                <TarjetaPartida key={partida.id} partida={partida} />
+                <TarjetaPartida key={partida.id} partida={partida} mia={partida.grupoId === miGrupo} />
               ))}
             </div>
           </section>
@@ -95,7 +99,7 @@ export default function Home() {
   )
 }
 
-function TarjetaPartida({ partida }: { partida: Partida }) {
+function TarjetaPartida({ partida, mia }: { partida: Partida; mia: boolean }) {
   const motor = motorDe(partida.juego)
   const terminada = partida.estado !== 'en_curso'
 
@@ -108,7 +112,10 @@ function TarjetaPartida({ partida }: { partida: Partida }) {
             {partida.modalidad}
           </span>
         </p>
-        <p className="text-xs text-[color:var(--color-tiza-tenue)]">
+        <p className="flex shrink-0 items-center gap-2 text-xs text-[color:var(--color-tiza-tenue)]">
+          {/* Las que anota otro van en la misma lista, ordenadas por fecha: lo
+              único que cambia es que no se pueden tocar, y se avisa sin gritarlo. */}
+          {!mia && <span className="rounded-full bg-white/10 px-2 py-0.5">mirás</span>}
           {terminada ? fecha(partida.terminadaEn ?? partida.iniciadaEn) : fecha(partida.iniciadaEn)}
         </p>
       </div>

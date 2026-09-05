@@ -33,6 +33,37 @@ Para que el login por email funcione hay que tener configurado el envío de mail
 en Supabase → *Authentication*. El SMTP de prueba que viene por defecto tiene un
 límite bajo de envíos por hora: para uso real conviene poner uno propio.
 
+## Publicar
+
+Va en **Railway**, conectado a este repo: cada push a `main` redeploya.
+
+En Railway hay que cargar dos variables, **antes del primer build**:
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+⚠️ Las variables `NEXT_PUBLIC_*` se **incrustan en el bundle durante el build**,
+no se leen al arrancar. Si el primer deploy corre sin ellas, la app se publica
+sin saber a qué Supabase hablar y el síntoma no es un error de configuración
+sino que nada carga. Se arregla cargándolas y **volviendo a deployar** — no
+alcanza con reiniciar.
+
+⚠️ `DATABASE_URL` **no va en Railway.** Es la contraseña de la base y sólo la usa
+`pnpm migrar` desde la máquina. La app en producción anda únicamente con la clave
+pública.
+
+Después de publicar, en Supabase → *Authentication* → *URL Configuration*:
+
+| | |
+| --- | --- |
+| Site URL | `https://anotador.rossello.com.ar` |
+| Redirect URLs | `https://anotador.rossello.com.ar/auth/callback` y el de localhost |
+
+Sin eso, el link del mail vuelve al dominio equivocado y el acceso no se
+completa.
+
 ## Cómo está armado
 
 Cada juego es un **motor** (`src/core/motores/`) que define sus modalidades, cómo

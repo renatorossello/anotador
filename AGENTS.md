@@ -112,3 +112,38 @@ pone el servidor.
 - Estadísticas e historial por jugador.
 - Reclamar un perfil desde una cuenta.
 - PWA instalable.
+
+## Publicación
+
+Railway, conectado a este repo: cada push a `main` deploya solo.
+
+**`/api/version` dice qué commit está corriendo.** Existe porque averiguarlo
+desde afuera es adivinar — se perdió un buen rato buscando marcas de texto en
+los bundles, con una conclusión equivocada en el medio. Ante cualquier duda de
+"¿esto ya subió?", se consulta ahí y se termina la discusión.
+
+⚠️ **Las variables `NEXT_PUBLIC_*` se incrustan durante el build.** Si el primer
+deploy corre sin ellas, la app queda publicada sin saber a qué Supabase hablar y
+el síntoma no es un error de configuración: simplemente no carga nada. No
+alcanza con reiniciar, hay que volver a deployar.
+
+⚠️ **`DATABASE_URL` no va en Railway.** Es la contraseña de la base y sólo la usa
+`pnpm migrar` desde la máquina. La app en producción anda con la clave pública.
+
+### Cuando los pushes no disparan deploy
+
+Pasó, y costó varias vueltas. El síntoma es que GitHub tiene el commit, el sitio
+responde, y `/api/version` devuelve uno viejo. En *Settings → Source* aparecía
+**"GitHub Repo not found"**, con el repo igual conectado arriba.
+
+Lo que **no** era, aunque lo parecía:
+
+- Permisos del repo: la GitHub App tenía *All repositories* y el repo es público.
+- El repo o la rama: existían y estaban bien.
+- Caché o propagación: probado con query strings nuevos, el origin servía viejo.
+
+Era la conexión entre la cuenta de Railway y la de GitHub. Se destraba
+reconectando desde **Railway** (no desde GitHub) hasta que *Branch connected to
+production* muestre `main` y **Auto deploys when pushed to GitHub** quede activo.
+*Wait for CI* tiene que estar **apagado**: con él prendido y sin ningún check en
+el repo, Railway espera para siempre un CI que nunca llega, y no marca error.

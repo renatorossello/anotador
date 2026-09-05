@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Marca } from '@/componentes/Marca'
+import { traducirErrorAuth } from '@/lib/errores'
 import { supabaseNavegador } from '@/lib/supabase/cliente'
 
 function Formulario() {
@@ -28,7 +29,7 @@ function Formulario() {
     })
 
     setEnviando(false)
-    if (error) setError(error.message)
+    if (error) setError(traducirErrorAuth(error.message))
     else setEnviado(true)
   }
 

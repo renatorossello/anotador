@@ -1,38 +1,57 @@
 'use client'
 
 import { useState } from 'react'
+import { LogoGoogle } from '@/componentes/BotonGoogle'
 import { Marca } from '@/componentes/Marca'
 import { traducirErrorAuth } from '@/lib/errores'
 import { supabaseNavegador } from '@/lib/supabase/cliente'
 
 /**
- * ⚠️ El `volver` se lee de `window.location` al enviar, y no con
- * `useSearchParams`.
+ * ⚠️ El `volver` se lee de `window.location` y no con `useSearchParams`.
  *
- * Ese hook obliga a envolver el formulario en un `<Suspense>` y saca a la página
- * del prerenderizado: el HTML llega sin el formulario y queda un pantallazo
- * vacío hasta que hidrata. Es la primera pantalla de la app, así que se nota. El
- * dato hace falta recién en el submit, cuando la página ya está viva.
+ * Ese hook obliga a envolver todo en un `<Suspense>` y saca a la página del
+ * prerenderizado: el HTML llega vacío y queda un pantallazo hasta que hidrata.
+ * Es la primera pantalla de la app, así que se nota. El dato hace falta recién
+ * al apretar el botón, cuando la página ya está viva.
  */
+function aDondeVolver() {
+  const volver = new URLSearchParams(window.location.search).get('volver') ?? '/'
+  return `${window.location.origin}/auth/callback?volver=${encodeURIComponent(volver)}`
+}
+
 export default function Entrar() {
   const [email, setEmail] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [yendoAGoogle, setYendoAGoogle] = useState(false)
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function entrar(evento: React.FormEvent) {
+  async function entrarConGoogle() {
+    setYendoAGoogle(true)
+    setError(null)
+
+    const supabase = supabaseNavegador()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: aDondeVolver() },
+    })
+
+    // Si sale bien, el navegador ya se fue a Google y esto no se ejecuta.
+    if (error) {
+      setError(traducirErrorAuth(error.message))
+      setYendoAGoogle(false)
+    }
+  }
+
+  async function entrarPorMail(evento: React.FormEvent) {
     evento.preventDefault()
     setEnviando(true)
     setError(null)
 
-    const volver = new URLSearchParams(window.location.search).get('volver') ?? '/'
-
     const supabase = supabaseNavegador()
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?volver=${encodeURIComponent(volver)}`,
-      },
+      options: { emailRedirectTo: aDondeVolver() },
     })
 
     setEnviando(false)
@@ -55,33 +74,48 @@ export default function Entrar() {
           </p>
         </div>
       ) : (
-        <form onSubmit={entrar} className="tarjeta flex flex-col gap-4 p-6">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm text-[color:var(--color-tiza-suave)]">Tu email</span>
+        <div className="tarjeta flex flex-col gap-5 p-6">
+          <button
+            type="button"
+            onClick={entrarConGoogle}
+            disabled={yendoAGoogle}
+            className="flex items-center justify-center gap-3 rounded-[14px] bg-white px-4 py-3.5 text-lg font-semibold text-[#1f1f1f] transition active:scale-[0.98] disabled:opacity-60"
+          >
+            <LogoGoogle />
+            {yendoAGoogle ? 'Abriendo Google…' : 'Entrar con Google'}
+          </button>
+
+          {error && <p className="text-sm text-[color:var(--color-error)]">{error}</p>}
+
+          <div className="flex items-center gap-3 text-xs text-[color:var(--color-tiza-tenue)]">
+            <span className="h-px flex-1 bg-white/12" />
+            o con un link por mail
+            <span className="h-px flex-1 bg-white/12" />
+          </div>
+
+          <form onSubmit={entrarPorMail} className="flex flex-col gap-3">
             <input
               type="email"
               required
               autoComplete="email"
+              placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-[10px] border border-white/15 bg-black/20 px-4 py-3 text-lg outline-none focus:border-[color:var(--color-bando-verde)]"
+              className="rounded-[10px] border border-white/15 bg-black/20 px-4 py-3 outline-none placeholder:text-white/25 focus:border-[color:var(--color-bando-verde)]"
             />
-          </label>
-
-          {error && <p className="text-sm text-[color:var(--color-error)]">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={enviando}
-            className="boton-pano px-4 py-3 text-lg font-semibold disabled:opacity-50"
-          >
-            {enviando ? 'Enviando…' : 'Entrar'}
-          </button>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="boton-pano px-4 py-3 font-semibold disabled:opacity-50"
+            >
+              {enviando ? 'Enviando…' : 'Mandame el link'}
+            </button>
+          </form>
 
           <p className="text-xs text-[color:var(--color-tiza-tenue)]">
             Sólo necesita cuenta quien anota. Los demás miran con el link de la sala.
           </p>
-        </form>
+        </div>
       )}
     </main>
   )

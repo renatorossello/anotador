@@ -37,12 +37,14 @@ export default function Home() {
             <Marca className="h-5 w-auto text-[color:var(--color-bando-verde)]" />
             <h1 className="text-xl font-bold tracking-tight">Anotador</h1>
           </div>
-          <Link
-            href="/jugadores"
-            className="text-sm text-[color:var(--color-tiza-suave)] underline-offset-4 hover:underline"
-          >
-            Jugadores
-          </Link>
+          <nav className="flex gap-4 text-sm text-[color:var(--color-tiza-suave)]">
+            <Link href="/stats" className="underline-offset-4 hover:underline">
+              Estadísticas
+            </Link>
+            <Link href="/jugadores" className="underline-offset-4 hover:underline">
+              Jugadores
+            </Link>
+          </nav>
         </header>
 
         {error && <p className="mt-6 text-sm text-[color:var(--color-error)]">{error}</p>}

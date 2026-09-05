@@ -48,7 +48,7 @@ const SELECT_PARTIDA = `
   id, grupo_id, juego, modalidad, config, estado, totales, codigo_sala,
   ganador_bando, iniciada_en, terminada_en,
   bandos!bandos_partida_id_fkey ( id, posicion, etiqueta, color,
-    bando_jugadores ( jugadores ( id, nombre, avatar_url ) ) )
+    bando_jugadores ( jugadores ( id, nombre, avatar_url, claimed_by ) ) )
 `
 
 function aJugador(fila: FilaJugador): Jugador {
@@ -58,6 +58,7 @@ function aJugador(fila: FilaJugador): Jugador {
     avatarUrl: fila.avatar_url,
     email: fila.email ?? null,
     vinculado: Boolean(fila.claimed_by),
+    usuarioId: fila.claimed_by ?? null,
   }
 }
 

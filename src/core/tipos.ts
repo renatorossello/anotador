@@ -27,6 +27,14 @@ export interface Jugador {
    */
   email?: string | null
   vinculado?: boolean
+  /**
+   * La cuenta a la que quedó atado el perfil, si la hay.
+   *
+   * Es lo que permite que los perfiles de la misma persona en grupos distintos
+   * cuenten como uno solo en las estadísticas: la identidad es la cuenta cuando
+   * existe, y el perfil suelto cuando no.
+   */
+  usuarioId?: string | null
 }
 
 export interface Bando {

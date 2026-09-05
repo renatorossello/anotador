@@ -1,3 +1,5 @@
 allowBuilds:
+  # vitest compila con esbuild y necesita bajar su binario al instalar.
+  esbuild: true
   sharp: false
   unrs-resolver: false

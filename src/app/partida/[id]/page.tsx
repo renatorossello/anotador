@@ -63,23 +63,24 @@ export default function PaginaPartida({ params }: { params: Promise<{ id: string
           </p>
         )}
 
-        {resultado?.terminada && !terminada && partida.puedoAnotar && (
-          <div className="mt-4 rounded-[10px] border border-[color:var(--color-bando-verde)]/40 bg-[color:var(--color-bando-verde)]/10 p-4 text-center">
-            <p className="text-lg font-semibold">Ganó {ganador ? nombresDe(ganador) : 'la partida'}</p>
-            <button
-              type="button"
-              onClick={() => partida.cerrar(resultado.ganador ?? null)}
-              className="boton-pano mt-3 w-full py-3 font-semibold"
-            >
-              Cerrar la partida
-            </button>
+        {/* La partida se cierra sola al llegar al objetivo: acá sólo se anuncia. */}
+        {terminada && (
+          <div className="mt-4 rounded-[10px] border border-[color:var(--color-bando-verde)]/40 bg-[color:var(--color-bando-verde)]/10 p-5 text-center">
+            <p className="text-xs uppercase tracking-widest text-[color:var(--color-bando-verde)]">
+              Terminó
+            </p>
+            <p className="mt-1 text-xl font-bold">
+              Ganó {ganador ? nombresDe(ganador) : 'la partida'}
+            </p>
           </div>
         )}
 
         {terminada ? (
-          <p className="mt-8 text-center text-sm text-[color:var(--color-tiza-tenue)]">
-            {ganador ? `Ganó ${nombresDe(ganador)}.` : 'Partida terminada.'}
-          </p>
+          partida.puedeDeshacer && (
+            <p className="mt-6 text-center text-sm text-[color:var(--color-tiza-tenue)]">
+              ¿Se anotó algo mal? Deshacé lo último y la partida vuelve a abrirse.
+            </p>
+          )
         ) : partida.puedoAnotar ? (
           <div className="mt-6 flex-1">
             {motor.clave === 'burako' ? (
@@ -95,7 +96,9 @@ export default function PaginaPartida({ params }: { params: Promise<{ id: string
           </p>
         )}
 
-        {!terminada && partida.puedeDeshacer && (
+        {/* También con la partida terminada: es la única forma de corregir el
+            asiento que la cerró, y al deshacerlo se reabre sola. */}
+        {partida.puedeDeshacer && (
           <button
             type="button"
             onClick={() => partida.deshacer()}

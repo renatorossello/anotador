@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motorDe } from '@/core/motores'
 import { sumar, vivos } from '@/core/puntajes'
 import type { Asiento, Partida, Resultado } from '@/core/tipos'
@@ -22,6 +22,8 @@ export function usePartida(id: string) {
   const [miGrupo, setMiGrupo] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Evita que la sincronización de estado se dispare otra vez mientras corre.
+  const sincronizandoEstado = useRef(false)
 
   useEffect(() => {
     let vigente = true
@@ -138,14 +140,64 @@ export function usePartida(id: string) {
     [asientos, partida],
   )
 
+  const reabrir = useCallback(async () => {
+    if (!partida) return
+
+    await encolar({ id: crypto.randomUUID(), tipo: 'reabrir_partida', partidaId: partida.id })
+    const abierta: Partida = {
+      ...partida,
+      estado: 'en_curso',
+      ganadorBandoId: null,
+      terminadaEn: null,
+    }
+    await guardarPartida(abierta, asientos)
+    setPartida(abierta)
+    void drenar()
+  }, [asientos, partida])
+
   // Anota el dueño del grupo. El vinculado ve la partida en su historial y nada
   // más: es lo que mantiene en pie el supuesto de un escritor por partida.
   const puedoAnotar = Boolean(partida && miGrupo && partida.grupoId === miGrupo)
+
+  /**
+   * El estado de la partida sigue al resultado del motor, en los dos sentidos.
+   *
+   * Cerrar era un botón y en la mesa nadie lo tocaba: se gana, se festeja y se
+   * cierra la app, así que las partidas quedaban vivas para siempre y sin
+   * ganador. Y como el cierre ahora es automático, deshacer tiene que poder
+   * reabrir: si el asiento equivocado fue justo el que llevó a alguien al
+   * objetivo, corregirlo devuelve la partida a en curso.
+   *
+   * Está escrito como una sincronización y no como dos acciones sueltas porque
+   * así es idempotente: da igual cuántas veces corra, y repara sola una partida
+   * vieja que quedó abierta.
+   *
+   * ⚠️ El empate exacto de Burako no cierra nada, y sale gratis: en ese caso el
+   * motor devuelve `terminada: false` con `desempate`, y la partida sigue.
+   */
+  useEffect(() => {
+    if (!partida || !resultado || !puedoAnotar) return
+    if (sincronizandoEstado.current) return
+
+    const deberiaCerrar = resultado.terminada && partida.estado === 'en_curso'
+    const deberiaReabrir = !resultado.terminada && partida.estado === 'terminada'
+    if (!deberiaCerrar && !deberiaReabrir) return
+
+    sincronizandoEstado.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- es asíncrono: encola y guarda antes de tocar el estado
+    const accion = deberiaCerrar ? cerrar(resultado.ganador ?? null) : reabrir()
+    void accion.finally(() => {
+      sincronizandoEstado.current = false
+    })
+  }, [partida, resultado, puedoAnotar, cerrar, reabrir])
+
+  // Deshacer sigue disponible con la partida terminada: es la única forma de
+  // corregir el asiento que la cerró.
   const puedeDeshacer = puedoAnotar && vivos(asientos).length > 0
 
   return {
     partida, asientos, totales, resultado, motor, cargando, error,
-    anotar, deshacer, cerrar, puedeDeshacer, puedoAnotar,
+    anotar, deshacer, puedeDeshacer, puedoAnotar,
   }
 }
 

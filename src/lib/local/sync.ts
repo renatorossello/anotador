@@ -75,6 +75,15 @@ async function aplicar(op: Operacion, usuarioId: string) {
     return
   }
 
+  if (op.tipo === 'reabrir_partida') {
+    const { error } = await supabase
+      .from('partidas')
+      .update({ estado: 'en_curso', ganador_bando: null, terminada_en: null })
+      .eq('id', op.partidaId)
+    if (error) throw error
+    return
+  }
+
   const { error } = await supabase
     .from('partidas')
     .update({

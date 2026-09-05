@@ -25,6 +25,10 @@ export type Operacion = OperacionBase &
     | { tipo: 'crear_asiento'; asiento: Asiento }
     | { tipo: 'anular_asiento'; asientoId: string; anuladoEn: string }
     | { tipo: 'cerrar_partida'; ganadorBandoId: string | null; terminadaEn: string }
+    // Deshacer un asiento puede devolver la partida a en curso: si el error de
+    // tipeo fue justo el que llevó a alguien al objetivo, corregirlo tiene que
+    // reabrirla. El cálculo ya es reversible; el estado también.
+    | { tipo: 'reabrir_partida' }
   )
 
 interface EsquemaLocal extends DBSchema {

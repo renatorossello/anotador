@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "anotador",
-      "runtimeExecutable": "pnpm",
+      "runtimeExecutable": "pnpm.cmd",
       "runtimeArgs": ["dev"],
       "port": 3000
     }

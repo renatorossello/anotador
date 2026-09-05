@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 /** Rutas que se abren sin cuenta: la sala y el login. */
-const PUBLICAS = ['/sala', '/entrar', '/auth']
+const PUBLICAS = ['/sala', '/entrar', '/auth', '/api/version']
 
 export async function proxy(request: NextRequest) {
   let respuesta = NextResponse.next({ request })

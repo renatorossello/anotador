@@ -8,13 +8,20 @@ import type { usePartida } from '@/hooks/usePartida'
 type Partida = ReturnType<typeof usePartida>
 
 /**
- * Se cierra la ronda con un número por bando. Admite negativos —en Burako se
- * resta— y por eso el campo no puede ser un `type="number"` a secas: en el
- * teclado de un teléfono el signo menos no aparece.
+ * Se cierra la ronda con un número por bando.
+ *
+ * ⚠️ El signo va en un botón aparte, y no se escribe.
+ *
+ * En Burako se resta seguido, pero **el teclado numérico de un teléfono no tiene
+ * el signo menos**: con `inputMode="numeric"` salen los diez dígitos y borrar, y
+ * nada más. Cambiar a teclado alfabético para poder tipear un guion sería peor
+ * —se anota con una mano, en una mesa—, así que los dígitos van por el teclado
+ * numérico y el signo por un toque.
  */
 export function AnotarBurako({ partida }: { partida: Partida }) {
   const bandos = partida.partida?.bandos ?? []
   const [valores, setValores] = useState<Record<string, string>>({})
+  const [negativos, setNegativos] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
@@ -24,20 +31,24 @@ export function AnotarBurako({ partida }: { partida: Partida }) {
 
     const puntos: Record<string, number> = {}
     for (const bando of bandos) {
-      const crudo = (valores[bando.id] ?? '').trim()
-      const valor = crudo === '' ? 0 : Number(crudo.replace(',', '.'))
+      const crudo = (valores[bando.id] ?? '').replace(/\D/g, '')
+      const valor = crudo === '' ? 0 : Number(crudo)
       if (!Number.isFinite(valor)) {
         setError(`Revisá el puntaje de ${bando.etiqueta}.`)
         setGuardando(false)
         return
       }
-      puntos[bando.id] = Math.trunc(valor)
+      puntos[bando.id] = negativos[bando.id] ? -valor : valor
     }
 
     const problema = await partida.anotar({ puntos })
     setGuardando(false)
-    if (problema) setError(problema)
-    else setValores({})
+    if (problema) {
+      setError(problema)
+    } else {
+      setValores({})
+      setNegativos({})
+    }
   }
 
   const rondas = vivos(partida.asientos)
@@ -50,21 +61,46 @@ export function AnotarBurako({ partida }: { partida: Partida }) {
 
       <div className="flex flex-col gap-3">
         {bandos.map((bando) => (
-          <label key={bando.id} className="tarjeta flex items-center gap-3 px-4 py-3">
+          <label key={bando.id} className="tarjeta flex items-center gap-2 px-3 py-3">
             <span
-              className="w-28 shrink-0 truncate text-sm font-semibold"
+              className="min-w-0 flex-1 truncate text-sm font-semibold"
               style={{ color: colorDe(bando.color) }}
             >
               {bando.jugadores.map((j) => j.nombre).join(' y ') || bando.etiqueta}
             </span>
-            <input
-              inputMode="numeric"
-              pattern="-?[0-9]*"
-              placeholder="0"
-              value={valores[bando.id] ?? ''}
-              onChange={(e) => setValores((v) => ({ ...v, [bando.id]: e.target.value }))}
-              className="cifra w-full bg-transparent text-right text-3xl font-bold outline-none placeholder:text-white/20"
-            />
+
+            <button
+              type="button"
+              onClick={() => setNegativos((n) => ({ ...n, [bando.id]: !n[bando.id] }))}
+              aria-pressed={Boolean(negativos[bando.id])}
+              aria-label={`Cambiar el signo de ${bando.etiqueta}`}
+              className={`h-11 w-11 shrink-0 rounded-full border text-xl font-bold transition ${
+                negativos[bando.id]
+                  ? 'border-transparent bg-[color:var(--color-bando-bordo)] text-[color:var(--color-pano-900)]'
+                  : 'border-white/20 text-[color:var(--color-tiza-suave)]'
+              }`}
+            >
+              {negativos[bando.id] ? '−' : '+'}
+            </button>
+
+            <span
+              className="cifra flex min-w-0 items-baseline text-3xl font-bold"
+              style={negativos[bando.id] ? { color: 'var(--color-bando-bordo)' } : undefined}
+            >
+              {negativos[bando.id] && <span aria-hidden="true">−</span>}
+              <input
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="0"
+                value={valores[bando.id] ?? ''}
+                onChange={(e) =>
+                  // Los dígitos y nada más: el signo es del botón, así que un
+                  // guion tipeado no puede convivir con él y dar dos signos.
+                  setValores((v) => ({ ...v, [bando.id]: e.target.value.replace(/\D/g, '') }))
+                }
+                className="cifra w-20 bg-transparent text-right text-3xl font-bold outline-none placeholder:text-white/20"
+              />
+            </span>
           </label>
         ))}
       </div>

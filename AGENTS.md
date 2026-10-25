@@ -156,6 +156,68 @@ lista se lee igual sin obligar a nadie a cargar nada.
   perfiles de la misma gente se duplican. ⚠️ Habilitar dos anotadores rompe el
   supuesto de un escritor por partida.
 
+## Infraestructura
+
+Relevado con los conectores de Railway y Supabase el 2026-10-25.
+
+⚠️ **Hay proyectos hermanos con nombres parecidos y no son este.** En las dos
+cuentas existe también `burako` (el antecesor) y en Railway `Hitazo`. El del
+anotador es **«Anotador»** en Railway y **«anotador»** en Supabase; ante la duda,
+los ids de abajo.
+
+**Railway** — proyecto `Anotador` (`f2cc05df-2c49-4730-8835-0e9cb75a9362`)
+
+| | |
+| --- | --- |
+| Servicio | `anotador` (`ef677cfb-6637-4d8c-bab6-f4ba6142b759`), único |
+| Entorno | `production`, único |
+| Origen | `renatorossello/anotador`, rama `main`, *Wait for CI* apagado |
+| Build | Railpack; arranca con `pnpm start` (escucha en `$PORT`) |
+| Región | `sfo`, 1 réplica, sin volumen |
+| Dominio | sólo `anotador.rossello.com.ar` → puerto 8080; no hay dominio `*.up.railway.app` |
+| Variables | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y las `RAILWAY_*` que pone la plataforma |
+
+**Supabase** — proyecto `anotador` (ref `dhndjjpxbofjhvuzgnqh`), `us-east-1`, Postgres 17
+
+| | |
+| --- | --- |
+| API | `https://dhndjjpxbofjhvuzgnqh.supabase.co` |
+| Migraciones | 0001 a 0005 aplicadas; se registran en `public._migraciones` (no en el historial de Supabase) |
+| Auth | email (magic link) y Google |
+| Storage | bucket `avatares`, público |
+| Edge Functions | ninguna |
+
+⚠️ **El proyecto de Supabase hiberna cuando no se usa.** Dormido, las
+herramientas que van directo a la base (SQL, listar tablas o migraciones)
+fallan con *connection timeout* y los advisors dicen *hibernated*; no es una
+caída. Se despierta con un pedido a la API REST —cualquier `GET
+/rest/v1/partidas` con la clave pública—: el primero tarda unos segundos y
+después todo responde normal. Para el usuario es lo mismo: la primera carga
+después de días sin uso es lenta.
+
+`list_migrations` de Supabase no sirve para saber qué está aplicado, porque las
+migraciones no van por la CLI. Lo que vale es `select archivo from
+public._migraciones` o `pnpm migrar --estado`.
+
+La app corre en `sfo` y la base en `us-east-1`: cada consulta cruza el
+continente. No molesta porque el anotador no espera al servidor para mostrar lo
+que anota, pero es lo primero a mirar si alguna pantalla que sí lee de la base
+se siente lenta.
+
+**Lo que marcan los advisors y está bien así**: que `sala()` y las funciones
+auxiliares de las policies (`es_mi_grupo`, `es_mi_partida`, `jugue_en`,
+`puedo_editar_jugador`) sean `SECURITY DEFINER` ejecutables por `anon` /
+`authenticated` es el diseño (ver arriba). `_migraciones` tiene RLS sin
+policies a propósito: sólo la toca `pnpm migrar` con la contraseña de la base.
+`rls_auto_enable` no es nuestra, la crea Supabase.
+
+**Lo que marcan y queda pendiente** (nada urgente con este volumen): las
+funciones de trigger y `recalcular_totales` también son ejecutables por RPC y no
+tendrían por qué; `nuevo_codigo_sala` sin `search_path` fijo; la policy
+`grupos_propios` llama a `auth.uid()` por fila en vez de `(select auth.uid())`;
+algunas FK sin índice; y la protección contra contraseñas filtradas apagada en
+Auth.
+
 ## Publicación
 
 Railway, conectado a este repo: cada push a `main` deploya solo.
